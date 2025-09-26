@@ -530,7 +530,7 @@ unsigned long walt_cpu_util(int cpu, unsigned long util_cfs,
 #ifdef CONFIG_SCHED_WALT
 static unsigned long waltgov_get_util(struct waltgov_cpu *wg_cpu)
 {
-	struct rq *rq = cpu_rq(wg_cpu->cpu);
+	//struct rq *rq = cpu_rq(wg_cpu->cpu);
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 0)
 	unsigned long max = arch_scale_cpu_capacity(NULL, wg_cpu->cpu);
 #else
@@ -725,15 +725,15 @@ static void waltgov_update_single(struct update_util_data *hook, u64 time,
 {
 	struct waltgov_cpu *wg_cpu = container_of(hook, struct waltgov_cpu, update_util);
 	struct waltgov_policy *wg_policy = wg_cpu->wg_policy;
-	struct cpufreq_policy *policy = wg_policy->policy;
+	//struct cpufreq_policy *policy = wg_policy->policy;
 	unsigned long util, max, hs_util, boost_util;
-	unsigned int next_f, j;
+	unsigned int next_f;
 	bool busy;
 #ifdef CONFIG_SCHED_WALT
 	unsigned long nl = wg_cpu->walt_load.nl;
 	unsigned long cpu_util = wg_cpu->util;
 #endif
-	int boost = wg_policy->tunables->boost;
+	//int boost = wg_policy->tunables->boost;
 #ifdef CONFIG_OPLUS_FEATURE_INPUT_BOOST_V4
 	unsigned long fbg_boost_util = 0;
 	unsigned long irq_flag;
@@ -819,7 +819,7 @@ static unsigned int waltgov_next_freq_shared(struct waltgov_cpu *wg_cpu, u64 tim
 {
 	struct waltgov_policy *wg_policy = wg_cpu->wg_policy;
 	struct cpufreq_policy *policy = wg_policy->policy;
-	u64 last_freq_update_time = wg_policy->last_freq_update_time;
+	//u64 last_freq_update_time = wg_policy->last_freq_update_time;
 	unsigned long util = 0, max = 1;
 	unsigned int j;
 	int boost = wg_policy->tunables->boost;
