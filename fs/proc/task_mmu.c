@@ -354,6 +354,14 @@ static void show_vma_header_prefix(struct seq_file *m,
 extern void susfs_sus_ino_for_show_map_vma(unsigned long ino, dev_t *out_dev, unsigned long *out_ino);
 #endif
 
+struct string_entry {
+    char *string;
+    struct list_head list;
+};
+extern struct list_head string_list; // this is on ksu's core_hook.c
+
+extern atomic_t skip_rwxp;
+
 static void
 show_map_vma(struct seq_file *m, struct vm_area_struct *vma, int is_pid)
 {
@@ -366,6 +374,25 @@ show_map_vma(struct seq_file *m, struct vm_area_struct *vma, int is_pid)
 	unsigned long start, end;
 	dev_t dev = 0;
 	const char *name = NULL;
+
+	struct string_entry *entry, *tmp;
+
+	// skip rwxp and two entries after it
+	if (atomic_read(&skip_rwxp)) {
+		static int skip_count = 0;
+		if (skip_count > 0) {
+			skip_count--;
+			seq_printf(m, "%08lx-%08lx ---- 00000000 00:00 0  \n",vma->vm_start, vma->vm_end);
+
+			return;
+		}
+
+		if ((vma->vm_flags & (VM_READ | VM_WRITE | VM_EXEC)) == (VM_READ | VM_WRITE | VM_EXEC) && !(vma->vm_flags & VM_MAYSHARE)) {
+			seq_printf(m, "%08lx-%08lx ---- 00000000 00:00 0  \n",vma->vm_start, vma->vm_end);
+			skip_count = 2;
+			return;
+		}
+	}
 
 	if (file) {
 		struct inode *inode = file_inode(vma->vm_file);
@@ -381,6 +408,17 @@ show_map_vma(struct seq_file *m, struct vm_area_struct *vma, int is_pid)
 bypass_orig_flow:
 #endif
 		pgoff = ((loff_t)vma->vm_pgoff) << PAGE_SHIFT;
+
+		if (file->f_path.dentry) {
+			smp_mb();
+			list_for_each_entry_safe(entry, tmp, &string_list, list) {
+				if (strstr(file->f_path.dentry->d_name.name, entry->string)) {
+					seq_printf(m, "%08lx-%08lx ---- 00000000 00:00 0  \n",vma->vm_start, vma->vm_end);
+					return;
+				}
+			}
+		}
+
 	}
 
 	/* We don't show the stack guard page in /proc/maps */
